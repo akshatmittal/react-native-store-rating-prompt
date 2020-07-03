@@ -1,0 +1,193 @@
+
+import React, { Component } from 'react';
+import { Linking, Modal, Platform, Text, View } from 'react-native';
+import { AirbnbRating } from 'react-native-ratings';
+
+import { RateModalStyles } from '../Assets/Styles/RateModal';
+import { Button } from './Button';
+import { TextBox } from './TextBox';
+
+import { IProps, IState } from '../Interfaces/IRateModal';
+
+export class RateModal extends Component<IProps, IState> {
+
+	public static defaultProps = {
+		modalTitle: 'How many stars do you give to this app?',
+		cancelButtonText: 'Cancel',
+		totalStarCount: 5,
+		defaultStars: 5,
+		emptyCommentErrorMessage: 'Please specify your opinion.',
+		isVisible: true,
+		isModalOpen: false,
+		commentPlaceholderText: 'You can type your comments here ...',
+		rateButtonText: 'Rate',
+		sendButtonText: 'Send',
+		storeRedirectThreshold: 3,
+		starLabels: ['Terrible', 'Bad', 'Okay', 'Good', 'Great'],
+		isTransparent: true,
+	};
+
+	constructor(props: IProps) {
+		super(props);
+
+		this.state = {
+			isModalOpen: props.isModalOpen,
+			rating: 5,
+			review: '',
+			reviewError: false,
+			showContactForm: false,
+		};
+	}
+
+	public render(): JSX.Element {
+		const { onClosed, isTransparent } = this.props;
+		const { isModalOpen } = this.state;
+		return (
+			<Modal transparent={isTransparent} visible={isModalOpen} onRequestClose={() => onClosed}>
+				{this.renderRateModal()}
+			</Modal>
+		);
+	}
+
+	public componentWillMount(): void {
+		const { OS } = Platform;
+		const { totalStarCount, isVisible, starLabels, playStoreURL, iTunesStoreURL } = this.props;
+		if (isVisible && starLabels.length !== totalStarCount) {
+			throw new Error('You should define at least 5 review values');
+		} else if (OS === 'android' && !playStoreURL) {
+			throw new Error('Enter a valid store url');
+		} else if (OS === 'ios' && !iTunesStoreURL) {
+			throw new Error('Enter a valid store url');
+		}
+	}
+
+	public componentWillReceiveProps(nextProps): void {
+		if (this.props.isModalOpen !== nextProps.isModalOpen) {
+			this.setState({
+				isModalOpen: nextProps.isModalOpen,
+			});
+		}
+	}
+
+	private onStarSelected(e: number): void {
+		const { onStarSelected } = this.props;
+		if (onStarSelected) {
+			onStarSelected(e);
+		}
+		this.setState({ rating: e });
+	}
+
+	private renderRateModal(): JSX.Element {
+		const { modalContainer, modalWrapper } = RateModalStyles;
+		const { style } = this.props;
+
+		return (
+			<View style={[modalWrapper, style]}>
+				<View style={modalContainer}>
+					{!this.state.showContactForm && this.renderRatingView()}
+					{this.state.showContactForm && this.renderContactFormView()}
+				</View>
+			</View>
+		);
+	}
+
+	private renderRatingView(): JSX.Element {
+		const { title, buttonContainer, button, buttonCancel, buttonCancelText } = RateModalStyles;
+		const { starLabels, isVisible, cancelButtonText, totalStarCount, defaultStars, rateButtonText, modalTitle } = this.props;
+
+		return (
+			<React.Fragment>
+				<Text style={title}>{modalTitle}</Text>
+				<AirbnbRating
+					count={totalStarCount}
+					defaultRating={defaultStars}
+					showRating={isVisible}
+					reviews={starLabels}
+					onFinishRating={(e: number) => this.onStarSelected(e)}
+				/>
+
+				<View style={buttonContainer}>
+					<View style={{ flex: 1 }}></View>
+					<Button
+						text={cancelButtonText}
+						containerStyle={[button, buttonCancel]}
+						textStyle={buttonCancelText}
+						onPress={this.onClosed.bind(this)}
+					/>
+					<Button text={rateButtonText} containerStyle={button} onPress={this.sendRate.bind(this)} />
+				</View>
+			</React.Fragment>
+		);
+	}
+
+	private renderContactFormView(): JSX.Element {
+		const { buttonContainer, button } = RateModalStyles;
+		const { commentPlaceholderText, sendButtonText } = this.props;
+
+		return (
+			<React.Fragment>
+				<TextBox
+					containerStyle={[RateModalStyles.textBox]}
+					textStyle={{ paddingVertical: 5 }}
+					value={this.state.review}
+					placeholder={commentPlaceholderText}
+					multiline
+					autoFocus
+					onChangeText={(value: string) => this.setState({ review: value, reviewError: false })}
+				/>
+				<View>
+					{this.state.reviewError && this.renderReviewError()}
+				</View>
+				<View style={buttonContainer}>
+					<View style={{ flex: 1 }}></View>
+					<Button text={sendButtonText} containerStyle={button} onPress={this.sendContactUsForm.bind(this)} />
+				</View>
+			</React.Fragment>
+		);
+	}
+
+	private renderReviewError(): JSX.Element {
+		const { errorText } = RateModalStyles;
+		const { emptyCommentErrorMessage } = this.props;
+
+		return (
+			<Text style={errorText}>
+				{emptyCommentErrorMessage}
+			</Text>
+		);
+	}
+
+	private onClosed(): void {
+		const { onClosed } = this.props;
+		if (onClosed) {
+			onClosed();
+		} else {
+			this.setState({ isModalOpen: false });
+		}
+	}
+
+	private sendRate(): void {
+		const { storeRedirectThreshold, playStoreURL, iTunesStoreURL, onSendReview } = this.props;
+		if (this.state.rating > storeRedirectThreshold) {
+			Platform.OS === 'ios' ?
+				Linking.openURL(iTunesStoreURL) :
+				Linking.openURL(playStoreURL);
+			this.setState({ isModalOpen: false });
+			onSendReview();
+		} else {
+			this.setState({ showContactForm: true });
+		}
+	}
+
+	private sendContactUsForm(): void {
+		const { sendContactUsForm } = this.props;
+		if (this.state.review.length > 0) {
+			if (sendContactUsForm && typeof sendContactUsForm === 'function') {
+				return sendContactUsForm({ ...this.state });
+			}
+			throw new Error('You should generate sendContactUsForm function');
+		} else {
+			this.setState({ reviewError: true });
+		}
+	}
+}

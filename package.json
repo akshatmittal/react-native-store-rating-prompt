@@ -1,0 +1,52 @@
+{
+	"name": "react-native-store-rating-prompt",
+	"version": "1.0.0",
+	"description": "React Native Store Rating Prompt",
+	"scripts": {
+		"build": "tsc",
+		"travis-deploy-once": "travis-deploy-once",
+		"semantic-release": "semantic-release",
+		"watch": "tsc -- --watch"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/akshatmittal/react-native-store-rating-prompt"
+	},
+	"bugs": {
+		"url": "https://github.com/akshatmittal/react-native-store-rating-prompt/issues"
+	},
+	"homepage": "https://github.com/akshatmittal/react-native-store-rating-prompt",
+	"files": [
+		"dist"
+	],
+	"types": "dist/index.d.ts",
+	"main": "dist/index.js",
+	"keywords": [
+		"react",
+		"react-native",
+		"store rating",
+		"modal",
+		"review"
+	],
+	"author": "Akshat Mittal",
+	"license": "MIT",
+	"dependencies": {
+		"lodash.times": "^4.3.2",
+		"react-native-ratings": "^6.5.0"
+	},
+	"devDependencies": {
+		"@types/react": "^16.9.41",
+		"@types/react-native": "^0.57.65",
+		"ts-jest": "^24.3.0",
+		"ts-lib": "0.0.5",
+		"tslint": "^5.20.1",
+		"tslint-config-prettier": "^1.18.0",
+		"tslint-react": "^3.6.0",
+		"typescript": "^3.9.6"
+	},
+	"peerDependencies": {
+		"react": "*",
+		"react-native": "*",
+		"react-native-ratings": "^4.1.0"
+	}
+}
